@@ -9,6 +9,7 @@ lpTendencyChartWidgetPrivate::lpTendencyChartWidgetPrivate(lpTendencyChartWidget
 	init();
 	qDebug() << "This is main Thread...";
 	qDebug() << "Test !!!";
+	qDebug() << "Test3";
 	//connect(ui.btn_save, &QPushButton::clicked, this, &lpTendencyChartWidgetPrivate::save);
 }
 
