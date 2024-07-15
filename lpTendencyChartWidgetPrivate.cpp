@@ -3,9 +3,11 @@
 lpTendencyChartWidgetPrivate::lpTendencyChartWidgetPrivate(lpTendencyChartWidget *parent)
 	: QObject(parent)
 {
+
+
 	ui.setupUi(parent);
 	init();
-	
+	qDebug() << "This is main Thread...";
 	//connect(ui.btn_save, &QPushButton::clicked, this, &lpTendencyChartWidgetPrivate::save);
 }
 
