@@ -174,12 +174,14 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 
 	QDialog dialog(m_widget); // 使用当前widget作为父窗口
 	dialog.setWindowTitle("参数设置");
+	dialog.setStyleSheet("QDialog {background-color: black;}");
 	//dialog.resize(650, 900);
 	//dialog.setFixedSize(dialog.size());
 
 	QScrollArea *scrollArea = new QScrollArea(&dialog);
 	scrollArea->setWidgetResizable(true);
 	QWidget *container = new QWidget();
+	container->setStyleSheet("QWidget {background-color: black;}");
 
 
 
@@ -209,17 +211,21 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 		QVariantMap settingDefaults = m_configLoader->getSettingDefaultValue(settingName);
 		// 设置标签
 		QLabel* settingLabel = new QLabel(QString::number(i + 1) + "." + settingLabels[i], &dialog);
-		settingLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 14pt;}");
+		settingLabel->setStyleSheet("QLabel { color: white; font-weight: bold; font-size: 14pt;}");
 		gridLayout->addWidget(settingLabel, row, 0, 1, 2);
 
 		// 趋势图y轴显示区域设置
 		QHBoxLayout* rangeLayout = new QHBoxLayout;
 		QLabel* rangeLabel = new QLabel("  设置趋势图y轴显示区域（毫米）：", &dialog);
+		rangeLabel->setStyleSheet("QLabel {color: white; font-size: 12pt;}");
 		QLineEdit* rangeInput1 = new QLineEdit(&dialog);
+		rangeInput1->setStyleSheet("QLineEdit {color: white;}");
 		rangeInput1->setValidator(new QDoubleValidator(-1000, 10000, 2, rangeInput1));
 		//rangeInput1->setReadOnly(true); // 设置为只读
 		QLabel *separator = new QLabel(" --- ", &dialog);
+		separator->setStyleSheet("QLabel {color: white; }");
 		QLineEdit* rangeInput2 = new QLineEdit(&dialog);
+		rangeInput2->setStyleSheet("QLineEdit {color: white;}");
 		rangeInput2->setValidator(new QDoubleValidator(-1000, 10000, 2, rangeInput2));
 		//rangeInput2->setReadOnly(true); // 设置为只读
 		QVariantList yAxisRange = settingDefaults["yAxisRange"].toList();
@@ -240,11 +246,15 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 		QLabel* warningLabel = new QLabel(QString("  设置%1预警值（毫米）：").arg(settingLabels[i]), &dialog);
 		warningLabel->setStyleSheet("QLabel { color: orange; font-size: 12pt;}");
 		QLabel* greaterWarningLabel = new QLabel("大于", &dialog);
+		greaterWarningLabel->setStyleSheet("QLabel { color: white;}");
 		QLineEdit* greaterWarningInput = new QLineEdit(&dialog);
+		greaterWarningInput->setStyleSheet("QLineEdit {color: white;}");
 		greaterWarningInput->setValidator(new QDoubleValidator(-1000, 10000, 2, greaterWarningInput));
 		//greaterWarningInput->setReadOnly(true); // 设置为只读
 		QLabel* lessWarningLabel = new QLabel("或小于", &dialog);
+		lessWarningLabel->setStyleSheet("QLabel {color: white; }");
 		QLineEdit* lessWarningInput = new QLineEdit(&dialog);
+		lessWarningInput->setStyleSheet("QLineEdit {color: white;}");
 		lessWarningInput->setValidator(new QDoubleValidator(-1000, 10000, 2, lessWarningInput));
 		//lessWarningInput->setReadOnly(true); // 设置为只读
 		QVariantList warningValue = settingDefaults["warningValue"].toList();
@@ -267,11 +277,15 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 		QLabel* alarmLabel = new QLabel(QString("  设置%1告警值（毫米）：").arg(settingLabels[i]), &dialog);
 		alarmLabel->setStyleSheet("QLabel { color: red; font-size: 12pt;}");
 		QLabel* greaterAlarmLabel = new QLabel("大于", &dialog);
+		greaterAlarmLabel->setStyleSheet("QLabel {color: white; }");
 		QLineEdit* greaterAlarmInput = new QLineEdit(&dialog);
+		greaterAlarmInput->setStyleSheet("QLineEdit {color: white;}");
 		greaterAlarmInput->setValidator(new QDoubleValidator(-1000, 10000, 2, greaterAlarmInput));
 		//greaterAlarmInput->setReadOnly(true); // 设置为只读
 		QLabel* lessAlarmLabel = new QLabel("或小于", &dialog);
+		lessAlarmLabel->setStyleSheet("QLabel {color: white; }");
 		QLineEdit* lessAlarmInput = new QLineEdit(&dialog);
+		lessAlarmInput->setStyleSheet("QLineEdit {color: white;}");
 		lessAlarmInput->setValidator(new QDoubleValidator(-1000, 10000, 2, lessAlarmInput));
 		//lessAlarmInput->setReadOnly(true); // 设置为只读
 		QVariantList alarmValue = settingDefaults["alarmValue"].toList();
@@ -362,7 +376,10 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 	scrollArea->setWidget(container);
 	QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
 	mainLayout->addWidget(scrollArea);
-	dialog.resize(dialog.sizeHint().boundedTo(QSize(650, 650)));
+
+	dialog.setMaximumSize(900, 800);
+	dialog.setMinimumSize(650, 200);
+	dialog.adjustSize();
 
 	//// 将网格布局添加到对话框
 	//dialog.setLayout(gridLayout);
@@ -466,21 +483,70 @@ void lpTendencyDataChart::AlignPBClicked()
 	// 将按钮布局添加到网格布局的下方
 	gridLayout->addLayout(buttonLayout, subCategoryNames.size() + 1, 0, 1, 2); // 调整行位置以适应新的布局
 
-		// 更新对齐度显示的函数
 	auto updateAlignmentDisplay = [&]() {
+
 		int leftId = leftGroup->checkedId();
 		int rightId = rightGroup->checkedId();
 
 		if (leftId != -1 && rightId != -1) {
 			QString leftOption = leftOptions[leftId];
 			QString rightOption = rightOptions[rightId];
-			QString alignment = QString("%1/%2对齐度").arg(leftOption, rightOption);
-			alignmentDisplay->setText(alignment);
+
+			//使用正则表达式提取前缀和后缀
+			QRegularExpression re("^\\((.*?)\\)([A-Z])面(.*?)宽度$");
+			QRegularExpressionMatch leftMatch = re.match(leftOption);
+			QRegularExpressionMatch rightMatch = re.match(rightOption);
+
+			if (leftMatch.hasMatch() && rightMatch.hasMatch())
+			{
+				QString commonPrefix = leftMatch.captured(1);//例如"（通道1）"
+				QString rightPrefix = rightMatch.captured(1);
+				// 检查左右选项的通道是否相同
+				if (commonPrefix != rightPrefix) {
+					QMessageBox::warning(nullptr, "错误", "左右两边选的通道必须相同！");
+					alignmentDisplay->clear();
+					
+					return; // 提前退出函数
+				}
+
+
+				QString leftSuffix = leftMatch.captured(2);//例如" A "
+				QString rightSuffix = rightMatch.captured(2);//例如 " B "
+				QString commonPostfix = leftMatch.captured(3);//例如" 陶瓷区 "
+
+				QString alignment = QString("(%1)%2/%3面%4对齐度").arg(commonPrefix, leftSuffix, rightSuffix, commonPostfix);
+				alignmentDisplay->setText(alignment);
+			}
+			else
+			{
+
+				alignmentDisplay->clear();
+			}
 		}
-		else {
+		else
+		{
 			alignmentDisplay->clear();
 		}
+
 	};
+
+
+
+	//	// 更新对齐度显示的函数
+	//auto updateAlignmentDisplay = [&]() {
+	//	int leftId = leftGroup->checkedId();
+	//	int rightId = rightGroup->checkedId();
+
+	//	if (leftId != -1 && rightId != -1) {
+	//		QString leftOption = leftOptions[leftId];
+	//		QString rightOption = rightOptions[rightId];
+	//		QString alignment = QString("%1/%2对齐度").arg(leftOption, rightOption);
+	//		alignmentDisplay->setText(alignment);
+	//	}
+	//	else {
+	//		alignmentDisplay->clear();
+	//	}
+	//};
 
 	// 连接单选按钮的信号与槽
 	QObject::connect(leftGroup, QOverload<int>::of(&QButtonGroup::buttonClicked), updateAlignmentDisplay);
@@ -502,7 +568,28 @@ void lpTendencyDataChart::AlignPBClicked()
 				return;
 			}
 
-			QString alignment = QString("%1/%2对齐度").arg(leftOption, rightOption);
+			//使用正则表达式提取前缀和后缀
+			QRegularExpression re("^\\((.*?)\\)([A-Z])面(.*?)宽度$");
+			QRegularExpressionMatch leftMatch = re.match(leftOption);
+			QRegularExpressionMatch rightMatch = re.match(rightOption);
+
+			QString alignment;
+			if (leftMatch.hasMatch() && rightMatch.hasMatch())
+			{
+				QString commonPrefix = leftMatch.captured(1);//例如"（通道1）"
+				QString leftSuffix = leftMatch.captured(2);//例如" A "
+				QString rightSuffix = rightMatch.captured(2);//例如 " B "
+				QString commonPostfix = leftMatch.captured(3);//例如" 陶瓷区 "
+
+				alignment = QString("(%1)%2/%3面%4对齐度").arg(commonPrefix, leftSuffix, rightSuffix, commonPostfix);
+
+			}
+			else
+			{
+				QMessageBox::warning(&dialog, "格式错误", "选项不正确");
+				return;
+			}
+			//QString alignment = QString("%1/%2对齐度").arg(leftOption, rightOption);
 			bool display = true;
 			// 保存对齐度设置
 			qDebug() << "Selected alignment:" << alignment;
