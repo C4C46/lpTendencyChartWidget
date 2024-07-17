@@ -101,18 +101,18 @@ double lpTendencyDataChart::adjustXValue(double originalX) {
 
 
 void lpTendencyDataChart::onChartUpdate(const QString &curveName, double x, double y) {
-	if (x >= 30000) {
-		// 清除所有曲线的数据
-		for (auto &curve : m_curves) {
-			m_xDataMap[curve->title().text()].clear();
-			m_yDataMap[curve->title().text()].clear();
-			curve->setSamples(m_xDataMap[curve->title().text()], m_yDataMap[curve->title().text()]);
-		}
-		// 重置x轴范围
-		m_plot->setAxisScale(QwtPlot::xBottom, 0, 50);
-		m_plot->replot();
-		return; // 早期返回，避免在清除后添加数据点
-	}
+	//if (x >= 30000) {
+	//	// 清除所有曲线的数据
+	//	for (auto &curve : m_curves) {
+	//		m_xDataMap[curve->title().text()].clear();
+	//		m_yDataMap[curve->title().text()].clear();
+	//		curve->setSamples(m_xDataMap[curve->title().text()], m_yDataMap[curve->title().text()]);
+	//	}
+	//	// 重置x轴范围
+	//	m_plot->setAxisScale(QwtPlot::xBottom, 0, 50);
+	//	m_plot->replot();
+	//	return; // 早期返回，避免在清除后添加数据点
+	//}
 
 	// 调整x值
 	x = adjustXValue(x);
@@ -180,9 +180,9 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 
 	QScrollArea *scrollArea = new QScrollArea(&dialog);
 	scrollArea->setWidgetResizable(true);
-	QWidget *container = new QWidget();
+	QWidget *container = new QWidget();/*
 	container->setStyleSheet("QWidget {background-color: black;}");
-
+*/
 
 
 	QGridLayout *gridLayout = new QGridLayout(container);
@@ -338,7 +338,7 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 			m_configLoader->updateSetting(settingName, "yAxisRange", yAxisRange);
 			m_configLoader->updateSetting(settingName, "warningValue", warningValue);
 			m_configLoader->updateSetting(settingName, "alarmValue", alarmValue);
-
+	
 			if (settingName == selectedParentName) {
 				// 更新图表的Y轴范围
 				m_plot->setAxisScale(QwtPlot::yLeft, yAxisRange[0].toDouble(), yAxisRange[1].toDouble());
@@ -346,6 +346,7 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 				qDebug() << "Setting Y-axis range for" << settingName << "to" << yAxisRange;
 			}
 		}
+		m_configLoader->saveConfig("Config/Event.json");
 
 		if (shouldReplot) {
 			m_plot->replot(); // 如果需要，则重新绘制图表以应用更改
@@ -377,13 +378,13 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 	QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
 	mainLayout->addWidget(scrollArea);
 
-	dialog.setMaximumSize(900, 800);
-	dialog.setMinimumSize(650, 200);
-	dialog.adjustSize();
+	//dialog.setMaximumSize(900, 800);
+	dialog.setMinimumSize(650, 500);
+
 
 	//// 将网格布局添加到对话框
 	//dialog.setLayout(gridLayout);
-
+	dialog.adjustSize();
 	dialog.exec();
 
 }
@@ -395,14 +396,31 @@ void lpTendencyDataChart::AlignPBClicked()
 {
 	QDialog dialog(m_widget); // 使用当前widget作为父窗口
 	dialog.setWindowTitle("对齐度设置");
-	dialog.resize(650, 500);
+	//dialog.resize(650, 500);
 	//dialog.setFixedSize(dialog.size());
-
-		// 设置字体大小
+			// 设置字体大小
 	QFont font = dialog.font();
 	font.setPointSize(14); // 设置字体大小为14点
 	dialog.setFont(font);
-	QGridLayout *gridLayout = new QGridLayout(&dialog);
+
+	QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
+	
+	QScrollArea *scrollArea = new QScrollArea(&dialog);
+	scrollArea->setWidgetResizable(true);
+	QWidget *container = new QWidget();
+	QVBoxLayout *mainLayout = new QVBoxLayout(container);
+
+	QTabWidget *tabWidget = new QTabWidget(container);
+	QWidget *ceramicTab = new QWidget();
+	QWidget *earTab = new QWidget();
+	QWidget *plasmaTab = new QWidget();
+
+	QGridLayout *ceramicLayout = new QGridLayout(ceramicTab);
+	QGridLayout *earLayout = new QGridLayout(earTab);
+	QGridLayout *plasmaLayout = new QGridLayout(plasmaTab);
+
+
+	//QGridLayout *gridLayout = new QGridLayout(container);
 
 
 	// 获取除了“对齐度”之外的所有子类名称
@@ -436,34 +454,51 @@ void lpTendencyDataChart::AlignPBClicked()
 	for (int i = 0; i < leftOptions.size(); ++i) {
 		QRadioButton *radioButton = new QRadioButton(leftOptions[i], &dialog);
 		leftGroup->addButton(radioButton, i);
-		gridLayout->addWidget(radioButton, i, 0);
+		if (leftOptions[i].contains("陶瓷区")) {
+			ceramicLayout->addWidget(radioButton, i, 0);
+		}
+		else if (leftOptions[i].contains("极耳区")) {
+			earLayout->addWidget(radioButton, i, 0);
+		}
+		else if (leftOptions[i].contains("电浆区")) {
+			plasmaLayout->addWidget(radioButton, i, 0);
+		}
 	}
 
 	// 添加右侧单选按钮
 	for (int i = 0; i < rightOptions.size(); ++i) {
 		QRadioButton *radioButton = new QRadioButton(rightOptions[i], &dialog);
 		rightGroup->addButton(radioButton, i);
-		gridLayout->addWidget(radioButton, i, 1);
+		if (rightOptions[i].contains("陶瓷区")) {
+			ceramicLayout->addWidget(radioButton, i, 1);
+		}
+		else if (rightOptions[i].contains("极耳区")) {
+			earLayout->addWidget(radioButton, i, 1);
+		}
+		else if (rightOptions[i].contains("电浆区")) {
+			plasmaLayout->addWidget(radioButton, i, 1);
+		}
 	}
 
-	//// 创建显示对齐度的文本框
-	//QLineEdit *alignmentDisplay = new QLineEdit(&dialog);
-	//alignmentDisplay->setReadOnly(true);
-	//gridLayout->addWidget(alignmentDisplay, leftOptions.size(), 0, 1, 2);
+
+	tabWidget->addTab(ceramicTab, "陶瓷区");
+	tabWidget->addTab(earTab, "极耳区");
+	tabWidget->addTab(plasmaTab, "电浆区");
+
+	mainLayout->addWidget(tabWidget);
+	scrollArea->setWidget(container);
+	dialogLayout->addWidget(scrollArea);
+
+
 	// 创建显示对齐度的文本框和标签
 	QLabel *alignmentLabel = new QLabel("对齐度名称:", &dialog);
-
 	QLineEdit *alignmentDisplay = new QLineEdit(&dialog);
 	alignmentDisplay->setReadOnly(true);
-
 	// 创建一个水平布局来包含标签和文本框
 	QHBoxLayout *alignmentLayout = new QHBoxLayout;
 	alignmentLayout->addWidget(alignmentLabel);
 	alignmentLayout->addWidget(alignmentDisplay);
-
-	// 将水平布局添加到网格布局中
-	gridLayout->addLayout(alignmentLayout, leftOptions.size(), 0, 1, 2); // 占据两列
-
+	dialogLayout->addLayout(alignmentLayout); 
 
 	// 创建删除，确定和取消按钮
 	QPushButton *deleteButton = new QPushButton("删除", &dialog);
@@ -476,12 +511,11 @@ void lpTendencyDataChart::AlignPBClicked()
 	buttonLayout->addStretch(); // 添加弹性空间，使按钮靠右对齐
 	buttonLayout->addWidget(deleteButton);
 	buttonLayout->addWidget(confirmButton);
-	//buttonLayout->addSpacing(10); // 在两个按钮之间添加10像素的间距
+	buttonLayout->addSpacing(10); // 在两个按钮之间添加10像素的间距
 	buttonLayout->addWidget(cancelButton);
+	dialogLayout->addLayout(buttonLayout);
 
-
-	// 将按钮布局添加到网格布局的下方
-	gridLayout->addLayout(buttonLayout, subCategoryNames.size() + 1, 0, 1, 2); // 调整行位置以适应新的布局
+	dialog.adjustSize();
 
 	auto updateAlignmentDisplay = [&]() {
 
@@ -530,24 +564,6 @@ void lpTendencyDataChart::AlignPBClicked()
 
 	};
 
-
-
-	//	// 更新对齐度显示的函数
-	//auto updateAlignmentDisplay = [&]() {
-	//	int leftId = leftGroup->checkedId();
-	//	int rightId = rightGroup->checkedId();
-
-	//	if (leftId != -1 && rightId != -1) {
-	//		QString leftOption = leftOptions[leftId];
-	//		QString rightOption = rightOptions[rightId];
-	//		QString alignment = QString("%1/%2对齐度").arg(leftOption, rightOption);
-	//		alignmentDisplay->setText(alignment);
-	//	}
-	//	else {
-	//		alignmentDisplay->clear();
-	//	}
-	//};
-
 	// 连接单选按钮的信号与槽
 	QObject::connect(leftGroup, QOverload<int>::of(&QButtonGroup::buttonClicked), updateAlignmentDisplay);
 	QObject::connect(rightGroup, QOverload<int>::of(&QButtonGroup::buttonClicked), updateAlignmentDisplay);
@@ -576,7 +592,14 @@ void lpTendencyDataChart::AlignPBClicked()
 			QString alignment;
 			if (leftMatch.hasMatch() && rightMatch.hasMatch())
 			{
+				QString rightPrefix = rightMatch.captured(1);
 				QString commonPrefix = leftMatch.captured(1);//例如"（通道1）"
+				if (commonPrefix != rightPrefix) {
+					QMessageBox::warning(nullptr, "错误", "左右两边选的通道必须相同！");
+					alignmentDisplay->clear();
+
+					return; // 提前退出函数
+				}
 				QString leftSuffix = leftMatch.captured(2);//例如" A "
 				QString rightSuffix = rightMatch.captured(2);//例如 " B "
 				QString commonPostfix = leftMatch.captured(3);//例如" 陶瓷区 "
@@ -598,6 +621,7 @@ void lpTendencyDataChart::AlignPBClicked()
 
 			// 根据对齐度名称确定应该添加到哪个父类别
 			QString parentCategory;
+			bool shouldEmit = true;//判断是否要更新当前图例界面
 			if (alignment.contains("陶瓷区")) {
 				parentCategory = "陶瓷区对齐度";
 			}
@@ -613,14 +637,18 @@ void lpTendencyDataChart::AlignPBClicked()
 			}
 
 			// 更新配置文件或应用设置
-			m_configLoader->addNewChildToCategory(parentCategory, alignment, display);
+			m_configLoader->addNewChildToCategory(parentCategory, alignment, display, &shouldEmit);
 
-			// 同步更新趋势勾选指标和趋势图的曲线名称
-			emit m_configLoader->curveDisplayChanged(alignment, true);
+			if (shouldEmit)
+			{
+				// 同步更新趋势勾选指标和趋势图的曲线名称
+				emit m_configLoader->curveDisplayChanged(alignment, true);
+
+				dialog.accept(); // 关闭对话框
+			}
+
 		}
 
-
-		dialog.accept(); // 关闭对话框
 	});
 
 	QObject::connect(deleteButton, &QPushButton::clicked, [alignmentDisplay, this, &dialog]() {

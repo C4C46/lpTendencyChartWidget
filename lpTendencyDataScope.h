@@ -25,10 +25,13 @@ public:
 	lpTendencyDataScope::~lpTendencyDataScope();
 	void setColumnNames(const QStringList &names);//表格表头加载布局
 	void addData(const QString & curveName, double x, double y, const QVariantList & warningValue, const QVariantList & alarmValue);//添加数据缓存
-	void saveTableSettings(const QStringList& identifiers);//保存表格设置的列宽和列排序位置
-	void loadTableSettings(const QStringList& identifiers);//加载表格设置的列宽和列排序位置
-	void loadSettingsFromFile();//加载对应列的位置信息
-	void saveSettingsToFile();//保存对应列的位置信息
+	//void saveTableSettings(const QStringList& identifiers);//保存表格设置的列宽和列排序位置
+	//void loadTableSettings(const QStringList& identifiers);//加载表格设置的列宽和列排序位置
+	//void loadSettingsFromFile();//加载对应列的位置信息
+	//void saveSettingsToFile();//保存对应列的位置信息
+	void setColumnVisibility(const QString & curveName, bool visible);//子类名称勾选状态
+	void saveColumnConfig();
+	void loadColumnConfig();
 
 
 signals:
@@ -53,6 +56,7 @@ private:
 	lpTendencyChartUpdateThread* m_UpdateThread;//表格数据处理工作线程
 	QThread *m_thread;
 	bool m_enableDataLoading = true;//先显示界面再加载数据
+	QMap<int, int> columnWidths; // 存储每列的宽度
 
 };
 

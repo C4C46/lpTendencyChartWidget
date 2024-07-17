@@ -27,9 +27,26 @@ QStringList lpTendencyChartConfig::getCurveNames() const {
 			}
 		}
 	}
-	emit curveNamesChanged(selectedCurveNames); // 发射信号
+	//emit curveNamesChanged(selectedCurveNames); // 发射信号
 	return selectedCurveNames;
 }
+
+QMap<QString, bool> lpTendencyChartConfig::getInitialCurveDisplayStatus() const {
+	QMap<QString, bool> displayStatus;
+	for (int i = 0; i < m_treeWidget->topLevelItemCount(); ++i) {
+		QTreeWidgetItem *parentItem = m_treeWidget->topLevelItem(i);
+		for (int j = 0; j < parentItem->childCount(); ++j) {
+			QTreeWidgetItem *childItem = parentItem->child(j);
+			QCheckBox *checkBox = qobject_cast<QCheckBox *>(m_treeWidget->itemWidget(childItem, 0));
+			if (checkBox) {
+				displayStatus[childItem->text(1)] = checkBox->isChecked();
+			}
+		}
+	}
+	return displayStatus;
+}
+
+
 
 
 QString lpTendencyChartConfig::getParentNameForCurve(const QString& curveName) const {
@@ -226,7 +243,7 @@ void lpTendencyChartConfig::loadConfig(const QString &filePath) {
 
 
 			QObject::connect(checkBox, &QCheckBox::toggled, [this, childName](bool checked) {
-				QStringList selectedCurveNames = getCurveNames();
+		/*		QStringList selectedCurveNames = getCurveNames();*/
 				emit curveDisplayChanged(childName, checked);
 			});
 		}
@@ -392,7 +409,7 @@ void lpTendencyChartConfig::updateSetting(const QString &settingName, const QStr
 }
 
 
-void lpTendencyChartConfig::addNewChildToCategory(const QString& categoryName, const QString& childName, bool display) {
+void lpTendencyChartConfig::addNewChildToCategory(const QString& categoryName, const QString& childName, bool display, bool *shouldEmit) {
 	if (m_configDoc.isNull() || !m_configDoc.isObject()) return;
 
 	QJsonObject rootObj = m_configDoc.object();
@@ -411,6 +428,7 @@ void lpTendencyChartConfig::addNewChildToCategory(const QString& categoryName, c
 				if (childObj["name"].toString() == childName) {
 					QMessageBox::warning(nullptr, "对齐度设置", "当前对齐度名称已存在！");
 					childExists = true;
+					*shouldEmit = false;
 					break;
 				}
 			}

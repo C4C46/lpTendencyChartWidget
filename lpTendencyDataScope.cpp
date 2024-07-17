@@ -4,6 +4,8 @@
 
 lpTendencyDataScope::lpTendencyDataScope(QTableWidget* tableWidget, QObject* parent)
 	: QObject(parent), data_tableWidget(tableWidget) {
+
+	//loadColumnConfig();
 	// 初始化表格设置
 	data_tableWidget->setColumnCount(0); // 初始列数设置为0
 	data_tableWidget->setHorizontalHeaderLabels(QStringList() << "X Value"); // 设置第一列标题
@@ -46,6 +48,7 @@ lpTendencyDataScope::~lpTendencyDataScope()
 	}
 	delete m_UpdateThread;
 
+	//saveColumnConfig();
 	//updateTimer->stop();
 }
 
@@ -53,8 +56,8 @@ lpTendencyDataScope::~lpTendencyDataScope()
 
 void lpTendencyDataScope::setColumnNames(const QStringList & names)
 {
-	m_enableDataLoading = false;
-	saveTableSettings(m_columnNames);
+	m_enableDataLoading = false;/*
+	saveTableSettings(m_columnNames);*/
 
 
 	m_columnNames = names;
@@ -67,17 +70,19 @@ void lpTendencyDataScope::setColumnNames(const QStringList & names)
 	// 隐藏行号
 	data_tableWidget->verticalHeader()->setVisible(false);
 
-	data_tableWidget->setColumnWidth(0, 100); // 设置第一列的固定宽度
-	data_tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed); // 第一列宽度固定
-
+	// 设置列宽
 	QFontMetrics metrics(data_tableWidget->font());
-	int minWidth = 220; // 最小宽度
-	for (int i = 1; i < headers.size(); ++i) {
+	int minWidth = 100; // 最小宽度
+	for (int i = 0; i < headers.size(); ++i) {
 		int width = metrics.width(headers[i]) + 20; // 加20像素留白
 		width = qMax(width, minWidth); // 确保不小于最小宽度
 		data_tableWidget->setColumnWidth(i, width);
-		data_tableWidget->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Interactive);
-
+		if (i < headers.size() - 1) {
+			data_tableWidget->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Interactive);
+		}
+		else {
+			data_tableWidget->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Stretch);
+		}
 	}
 
 	// 设置工具提示显示完整的列名称
@@ -90,9 +95,25 @@ void lpTendencyDataScope::setColumnNames(const QStringList & names)
 		headerItem->setToolTip(headers[i]);
 	}
 
-	loadTableSettings(m_columnNames);
+	//loadTableSettings(m_columnNames);
 	m_enableDataLoading = true;  
 }
+
+void lpTendencyDataScope::setColumnVisibility(const QString &curveName, bool visible) {
+	int columnIndex = m_columnNames.indexOf(curveName) + 1; // 加1是因为第一列是X值
+	if (columnIndex > 0) {
+		if (!visible) {
+			// 在隐藏前捕获宽度
+			columnWidths[columnIndex] = data_tableWidget->columnWidth(columnIndex);
+		}
+		data_tableWidget->setColumnHidden(columnIndex, !visible);
+		if (visible && columnWidths.contains(columnIndex)) {
+			// 如果列重新显示，恢复之前的宽度
+			data_tableWidget->setColumnWidth(columnIndex, columnWidths[columnIndex]);
+		}
+	}
+}
+
 
 
 
@@ -186,61 +207,45 @@ bool lpTendencyDataScope::eventFilter(QObject *obj, QEvent *event) {
 	return QObject::eventFilter(obj, event);
 }
 
-void lpTendencyDataScope::saveTableSettings(const QStringList& identifiers) {
-	QString identifier = identifiers.join("_");
-	//qDebug() << "Saving settings for identifier:" << identifier;
-	m_settingsCache["DataTableSettings_" + identifier + "_ColumnWidths"].clear();
-	m_settingsCache["DataTableSettings_" + identifier + "_ColumnPositions"].clear();
 
-	QVariantList widths, positions;
-	for (int i = 0; i < data_tableWidget->columnCount(); ++i) {
-		widths << data_tableWidget->columnWidth(i);
-		positions << data_tableWidget->horizontalHeader()->visualIndex(i);
-	}
-	m_settingsCache["DataTableSettings_" + identifier + "_ColumnWidths"] = widths;
-	m_settingsCache["DataTableSettings_" + identifier + "_ColumnPositions"] = positions;
+
+void lpTendencyDataScope::saveColumnConfig() {
+
+    QString configPath = QCoreApplication::applicationDirPath() + "/setting.ini";
+    QSettings settings(configPath, QSettings::IniFormat);
+    settings.beginGroup("ColumnConfig");
+
+    QStringList columnOrder;
+    for (int i = 0; i < data_tableWidget->horizontalHeader()->count(); ++i) {
+        int logicalIndex = data_tableWidget->horizontalHeader()->logicalIndex(i);
+        columnOrder.append(QString::number(logicalIndex));
+		int defaultWidth = (i == 0) ? 100 : 200;
+        int width = columnWidths.value(logicalIndex, defaultWidth); // 使用columnWidths获取宽度，如果不存在则默认为200
+
+        qDebug() << "Saving width for column" << logicalIndex << ": " << width;
+        settings.setValue(QString("Width_%1").arg(logicalIndex), width);
+    }
+	settings.setValue("Order", columnOrder.join(","));
+	settings.endGroup();
 }
 
-void lpTendencyDataScope::loadTableSettings(const QStringList& identifiers) {
-	QString identifier = identifiers.join("_");
-	//qDebug() << "Loading settings for identifier:" << identifier;
-	QVariantList widths = m_settingsCache["DataTableSettings_" + identifier + "_ColumnWidths"].toList();
-	QVariantList positions = m_settingsCache["DataTableSettings_" + identifier + "_ColumnPositions"].toList();
+void lpTendencyDataScope::loadColumnConfig() {
+	QString configPath = QCoreApplication::applicationDirPath() + "/setting.ini";
+	QSettings settings(configPath, QSettings::IniFormat);
+	settings.beginGroup("ColumnConfig");
+	QString order = settings.value("Order").toString();
+	QStringList columnOrder = order.split(",");
 
-	for (int i = 0; i < widths.size(); ++i) {
-		data_tableWidget->setColumnWidth(i, widths[i].toInt());
+	if (columnOrder.size() == data_tableWidget->horizontalHeader()->count()) {
+		for (int i = 0; i < columnOrder.size(); ++i) {
+			int logicalIndex = columnOrder[i].toInt();
+			int width = settings.value(QString("Width_%1").arg(logicalIndex), 100).toInt();
+			int currentVisualIndex = data_tableWidget->horizontalHeader()->visualIndex(logicalIndex);
+			data_tableWidget->horizontalHeader()->moveSection(currentVisualIndex, i);
+			data_tableWidget->setColumnWidth(logicalIndex, width);
+		}
 	}
-	for (int i = 0; i < positions.size(); ++i) {
-		data_tableWidget->horizontalHeader()->moveSection(data_tableWidget->horizontalHeader()->visualIndex(i), positions[i].toInt());
-	}
-
-}
-
-void lpTendencyDataScope::loadSettingsFromFile() {
-	QString settingsFile = QDir(QCoreApplication::applicationDirPath()).filePath("settings.ini");
-	QSettings settings(settingsFile, QSettings::IniFormat);
-	settings.beginGroup("DataTableSettings");
-	m_settingsCache = settings.value("SettingsCache").toMap();
-	m_columnNames = settings.value("SelectedSubclassNames").toStringList();  // 加载列名
 
 	settings.endGroup();
-	qDebug() << "Settings loaded from file:" << settingsFile;
-	qDebug() << "SettingsCache size:" << m_settingsCache.size();
-
-	loadTableSettings(m_columnNames);
-
 }
-
-void lpTendencyDataScope::saveSettingsToFile() {
-	QString settingsFile = QDir(QCoreApplication::applicationDirPath()).filePath("settings.ini");
-	QSettings settings(settingsFile, QSettings::IniFormat);
-	settings.beginGroup("DataTableSettings");
-
-	settings.setValue("SelectedSubclassNames", m_columnNames);
-	settings.setValue("SettingsCache", m_settingsCache);
-	settings.endGroup();
-	qDebug() << "Settings saved to file:" << settingsFile;
-	qDebug() << "SettingsCache size:" << m_settingsCache.size();
-}
-
 

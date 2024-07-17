@@ -17,9 +17,10 @@ lpTendencyChartWidgetPrivate::~lpTendencyChartWidgetPrivate()
 {
 	if (m_dataScope)
 	{
-		QStringList ChooseNames = m_ChartConfig->getCurveNames();
-		m_dataScope->saveTableSettings(ChooseNames);
-		m_dataScope->saveSettingsToFile();
+		//QStringList ChooseNames = m_ChartConfig->getCurveNames();
+		//m_dataScope->saveTableSettings(ChooseNames);
+		//m_dataScope->saveSettingsToFile();
+		m_dataScope->saveColumnConfig();
 		delete m_dataScope;
 
 	}
@@ -50,21 +51,32 @@ void lpTendencyChartWidgetPrivate::init()
 
 	QStringList curveNames = m_ChartConfig->getCurveNames(); // 获取曲线名称
 	QStringList allCurveNames = m_ChartConfig->getAllCurveNames(); // 获取所有曲线名称
-	QStringList ChooseNames = m_ChartConfig->getCurveNames();
+	//QStringList ChooseNames = m_ChartConfig->getCurveNames();
 
 	m_dataChart = new lpTendencyDataChart(this, ui.Chartwidget, curveNames, m_ChartConfig);
 	if (!m_dataScope)
 	{
 		m_dataScope = new lpTendencyDataScope(ui.tableWidget, this);
 	}
-	m_dataScope->setColumnNames(ChooseNames);
-	m_dataScope->loadSettingsFromFile();
+	m_dataScope->setColumnNames(allCurveNames);
+	m_dataScope->loadColumnConfig();
+
+
+
+	// 获取初始勾选状态并设置列的可见性
+	QMap<QString, bool> initialDisplayStatus = m_ChartConfig->getInitialCurveDisplayStatus();
+	for (const QString &curveName : allCurveNames) {
+		bool isVisible = initialDisplayStatus.value(curveName, false); // 默认不显示
+		m_dataScope->setColumnVisibility(curveName, isVisible);
+	}
+
 
 	connect(m_ChartConfig, &lpTendencyChartConfig::curveDisplayChanged, m_dataChart, &lpTendencyDataChart::onCurveDisplayChanged);
 	connect(ui.Interval_PB, &QPushButton::clicked, this, &lpTendencyChartWidgetPrivate::handleIntervalPBClicked);
 	connect(ui.Toggle_PB, &QPushButton::clicked, this, &lpTendencyChartWidgetPrivate::toggleTableVisibility);
 	connect(ui.Align_PB, &QPushButton::clicked, this, &lpTendencyChartWidgetPrivate::AlignPBClicked);
-	connect(m_ChartConfig, &lpTendencyChartConfig::curveNamesChanged, m_dataScope, &lpTendencyDataScope::setColumnNames);
+	connect(m_ChartConfig, &lpTendencyChartConfig::curveDisplayChanged, m_dataScope, &lpTendencyDataScope::setColumnVisibility);
+	//connect(m_ChartConfig, &lpTendencyChartConfig::curveNamesChanged, m_dataScope, &lpTendencyDataScope::setColumnNames);
 
 
 //处理接收到的数据处理线程

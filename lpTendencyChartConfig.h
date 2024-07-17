@@ -29,12 +29,13 @@ public:
 	void saveConfig(const QString &filePath); // 添加保存配置的声明
 	QString getSelectedParentNames() const;//获取选择的父类名称
 	void updateSetting(const QString & settingName, const QString & key, const QVariantList & value);//参数设置实时修改
-	void addNewChildToCategory(const QString & categoryName, const QString & childName, bool display);//添加新的对齐度匹配名称
+	void addNewChildToCategory(const QString & categoryName, const QString & childName, bool display, bool *shouldEmit);//添加新的对齐度匹配名称
 	void removeChildFromCategory(const QString & categoryName, const QString & childName);	//删除对齐度名称
 	QStringList getCurveNames() const; // 选中的子类名称
 	QString getParentNameForCurve(const QString & curveName) const;//子类所属父类
 	QStringList getParentCategoryNames() const;//添加到对应父类名称中
 	QStringList getAllCurveNames() const;//获取所有子类名称
+	QMap<QString, bool> getInitialCurveDisplayStatus() const;//获取勾选状态
 
 signals:
 	void curveDisplayChanged(const QString &curveName, bool display);//发送勾选子类名称以及对应复选框状态
