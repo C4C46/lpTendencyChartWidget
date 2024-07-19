@@ -200,7 +200,7 @@ void lpTendencyChartConfig::loadConfig(const QString &filePath) {
 	m_treeWidget->setColumnWidth(1, 220); // 为名称列设置更大的宽度
 
 	QFont font = m_treeWidget->font();
-	font.setPointSize(font.pointSize() + 2); // 增加字体大小
+	font.setPointSize(font.pointSize() + 3); // 增加字体大小
 	m_treeWidget->setFont(font);
 
 
@@ -231,6 +231,10 @@ void lpTendencyChartConfig::loadConfig(const QString &filePath) {
 			QTreeWidgetItem *childItem = new QTreeWidgetItem(parentItem);
 			childItem->setText(1, childName); // 子项名称也在右侧列
 			childItem->setToolTip(1, childName);
+
+			QColor childTextColor = QColor(Qt::red);
+			childItem->setTextColor(1, childTextColor);
+
 			QCheckBox *checkBox = new QCheckBox();
 			checkBox->setChecked(display); // 根据配置文件设置复选框的状态
 			checkBox->setEnabled(selected); // 根据父项的选中状态启用或禁用复选框
@@ -239,7 +243,7 @@ void lpTendencyChartConfig::loadConfig(const QString &filePath) {
 			// 设置子项的缩进级别和字体样式
 			QFont childFont = childItem->font(1);
 			childFont.setPointSize(childFont.pointSize() + 1);
-			childItem->setFont(1, childFont);
+			childItem->setFont(3, childFont);
 
 
 			QObject::connect(checkBox, &QCheckBox::toggled, [this, childName](bool checked) {

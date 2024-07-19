@@ -186,6 +186,7 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 
 
 	QGridLayout *gridLayout = new QGridLayout(container);
+	gridLayout->setMargin(0);
 
 
 	// 通过ConfigLoader获取父类名字
@@ -377,6 +378,7 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 	scrollArea->setWidget(container);
 	QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
 	mainLayout->addWidget(scrollArea);
+	mainLayout->setMargin(0);
 
 	//dialog.setMaximumSize(900, 800);
 	dialog.setMinimumSize(650, 500);
@@ -440,11 +442,11 @@ void lpTendencyDataChart::AlignPBClicked()
 
 	for (const QString &name : subCategoryNames)
 	{
-		if (name.contains("A"))
+		if (name.contains("A") && !name.contains("居中度"))
 		{
 			leftOptions.append(name);
 		}
-		else if (name.contains("B"))
+		else if (name.contains("B")&& !name.contains("居中度"))
 		{
 			rightOptions.append(name);
 		}
@@ -488,7 +490,8 @@ void lpTendencyDataChart::AlignPBClicked()
 	mainLayout->addWidget(tabWidget);
 	scrollArea->setWidget(container);
 	dialogLayout->addWidget(scrollArea);
-
+	mainLayout->setMargin(0);
+	dialogLayout->setMargin(0);
 
 	// 创建显示对齐度的文本框和标签
 	QLabel *alignmentLabel = new QLabel("对齐度名称:", &dialog);
