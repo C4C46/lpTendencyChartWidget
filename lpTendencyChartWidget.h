@@ -51,6 +51,8 @@ public:
 	void DataScope(const QString &curveName, double x, double y);//接收数据更新数据表格
 	void DataChart(const QString &curveName, double x, double y);//接收数据更新趋势图
 
+public slots:
+	void clearLithiumData();
 private:
 	QSharedPointer<lpTendencyChartWidgetPrivate> d_ptr;//管理趋势图表格
 };

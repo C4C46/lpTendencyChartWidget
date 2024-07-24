@@ -12,6 +12,8 @@
 #include <QTimer>
 #include <qDebug>
 #include <QThread>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include "lpTendencyChartUpdateThread.h"
 
 
@@ -29,9 +31,13 @@ public:
 	//void loadTableSettings(const QStringList& identifiers);//加载表格设置的列宽和列排序位置
 	//void loadSettingsFromFile();//加载对应列的位置信息
 	//void saveSettingsToFile();//保存对应列的位置信息
-	void setColumnVisibility(const QString & curveName, bool visible);//子类名称勾选状态
+	void setColumnVisibility(const QString & curveName, bool visible);
+	void initializeRows(int startM, int endM);//初始化表格步长
+	//子类名称勾选状态
 	void saveColumnConfig();
 	void loadColumnConfig();
+	void loadLithiumRowsConfig();//加载锂电表格配置文件
+	void clearTable();//清空表格数据内容
 
 
 signals:
@@ -57,6 +63,7 @@ private:
 	QThread *m_thread;
 	bool m_enableDataLoading = true;//先显示界面再加载数据
 	QMap<int, int> columnWidths; // 存储每列的宽度
-
+	int m_stepM; // 存储表格步长
+	int m_numColumns;//存储表格列数
 };
 

@@ -93,3 +93,10 @@ void lpTendencyChartWidget::DataChart(const QString & curveName, double x, doubl
 
 }
 
+void lpTendencyChartWidget::clearLithiumData()
+{
+
+	d_ptr->emit sgClearScope();
+	d_ptr->emit sgClearChart();
+}
+

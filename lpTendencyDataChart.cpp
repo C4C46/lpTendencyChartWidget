@@ -169,6 +169,7 @@ void lpTendencyDataChart::batchUpdateChart() {
 }
 
 
+
 //参数设置
 void lpTendencyDataChart::onIntervalPBClicked() {
 
@@ -917,3 +918,19 @@ void lpTendencyDataChart::updateSliderPosition() {
 	int xMinCurrent = static_cast<int>(m_plot->axisScaleDiv(QwtPlot::xBottom).lowerBound());
 	m_slider->setValue(xMinCurrent);
 }
+
+void lpTendencyDataChart::clearChart()
+{
+	for (auto &curve : m_curves) {
+		m_xDataMap[curve->title().text()].clear();
+		m_yDataMap[curve->title().text()].clear();
+		curve->setSamples(m_xDataMap[curve->title().text()], m_yDataMap[curve->title().text()]);
+	}
+
+	// 重置x轴和y轴的范围
+	m_plot->setAxisScale(QwtPlot::xBottom, 0, 50); // 重置X轴的范围为0-50
+
+	// 重新绘制图表
+	m_plot->replot();
+}
+

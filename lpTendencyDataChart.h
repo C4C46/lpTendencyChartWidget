@@ -60,7 +60,7 @@ public slots:
 	void onSliderValueChanged(int value);//趋势图拖拽进度条控制
 	void updateSliderPosition();//更新进度条滑块的位置
 	void batchUpdateChart(); // 批量更新图表
-	
+	void clearChart();//清空趋势图曲线内容
 
 private:
 	QWidget *m_widget;

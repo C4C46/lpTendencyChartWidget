@@ -25,6 +25,8 @@ public:
 signals:
 	void sgUpdateDataLithium(LithiumChannelRegionInfo_Tag * tag);
 	void sgUpdateData(const QString &curveName, double x, double y);
+	void sgClearScope();
+	void sgClearChart();
 
 public slots:
 	void updateDataScope(const QString &curveName, double x, double y);//接收数据更新数据表格
