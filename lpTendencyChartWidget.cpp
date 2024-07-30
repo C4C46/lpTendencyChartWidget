@@ -100,3 +100,8 @@ void lpTendencyChartWidget::clearLithiumData()
 	d_ptr->emit sgClearChart();
 }
 
+void lpTendencyChartWidget::onSaveLithiumRecipe(QString fileName, QString obj)
+{
+	d_ptr->emit sgChartRecipe(fileName, obj);
+	d_ptr->emit sgScopeRecipe(fileName, obj);
+}

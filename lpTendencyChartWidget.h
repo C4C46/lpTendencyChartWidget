@@ -53,6 +53,7 @@ public:
 
 public slots:
 	void clearLithiumData();
+	void onSaveLithiumRecipe(QString fileName, QString obj);
 private:
 	QSharedPointer<lpTendencyChartWidgetPrivate> d_ptr;//管理趋势图表格
 };

@@ -28,6 +28,7 @@
 #include <QTimer>
 #include <QScrollArea>
 #include "lpTendencyChartConfig.h"
+#include "lpTendencyChartUpdateThread.h"
 
 class lpTendencyDataChart : public QObject
 {
@@ -87,6 +88,7 @@ private:
 	int m_replotCount = 0;
 	QTimer *m_updateTimer; // 用于批量更新图表
 	bool m_hasNewData = false;
-
+	double m_lastResetX = 0; // 用于记录上次重置的x值
+	double m_maxReceivedX = 0; //存储接收到的最大X值
 };
 

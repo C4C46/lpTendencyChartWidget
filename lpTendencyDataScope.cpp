@@ -157,11 +157,20 @@ void lpTendencyDataScope::addData(const QString &curveName, double x, double y, 
 
 {
 
-	int maxMeter = data_tableWidget->rowCount() * m_stepM - m_stepM;
+
+	// 检查是否达到新的1000米阈值
+	if (static_cast<int>(x) - lastClearedMeter >= METER_THRESHOLD) {
+		clearTable(); // 清空表格
+		lastClearedMeter = static_cast<int>(x); // 更新上次清空的米数
+		maxMeter = lastClearedMeter; // 重置maxMeter为当前x值
+	}
+
+	// 检查是否需要添加新的行
 	if (x >= maxMeter) {
 		int newStartM = maxMeter + m_stepM;
 		int newEndM = newStartM + (m_stepM * (m_numColumns - 1)); // 根据步长和列数计算新的结束米数
 		initializeRows(newStartM, newEndM); // 添加新的行
+		maxMeter = newEndM; // 更新maxMeter为新的结束米数
 	}
 
 

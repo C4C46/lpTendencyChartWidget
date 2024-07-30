@@ -17,6 +17,7 @@
 #include "lpTendencyChartUpdateThread.h"
 
 
+
 class lpTendencyDataScope : public QObject
 {
 	Q_OBJECT
@@ -65,5 +66,8 @@ private:
 	QMap<int, int> columnWidths; // 存储每列的宽度
 	int m_stepM; // 存储表格步长
 	int m_numColumns;//存储表格列数
+	int lastMeter = 0;
+	int maxMeter = 0;
+	int lastClearedMeter = 0; // 记录上次清空时的米数
 };
 

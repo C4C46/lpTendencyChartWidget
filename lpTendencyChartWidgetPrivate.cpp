@@ -78,6 +78,7 @@ void lpTendencyChartWidgetPrivate::init()
 	connect(m_ChartConfig, &lpTendencyChartConfig::curveDisplayChanged, m_dataScope, &lpTendencyDataScope::setColumnVisibility);
 	connect(this, &lpTendencyChartWidgetPrivate::sgClearScope, m_dataScope, &lpTendencyDataScope::clearTable);
 	connect(this, &lpTendencyChartWidgetPrivate::sgClearChart, m_dataChart, &lpTendencyDataChart::clearChart);
+	
 	//connect(m_ChartConfig, &lpTendencyChartConfig::curveNamesChanged, m_dataScope, &lpTendencyDataScope::setColumnNames);
 
 

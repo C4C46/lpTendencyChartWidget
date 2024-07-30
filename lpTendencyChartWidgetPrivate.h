@@ -27,6 +27,8 @@ signals:
 	void sgUpdateData(const QString &curveName, double x, double y);
 	void sgClearScope();
 	void sgClearChart();
+	void sgChartRecipe(QString fileName, QString obj);
+	void sgScopeRecipe(QString fileName, QString obj);
 
 public slots:
 	void updateDataScope(const QString &curveName, double x, double y);//接收数据更新数据表格

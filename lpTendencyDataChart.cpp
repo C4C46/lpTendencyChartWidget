@@ -114,8 +114,28 @@ void lpTendencyDataChart::onChartUpdate(const QString &curveName, double x, doub
 	//	return; // 早期返回，避免在清除后添加数据点
 	//}
 
+	if (x > m_maxReceivedX) {
+		m_maxReceivedX = x;
+	}
+
+
 	// 调整x值
 	x = adjustXValue(x);
+
+
+	// 检查x值是否超过了上次重置点+1000
+	if (x - m_lastResetX > METER_THRESHOLD) {
+		m_lastResetX = x; // 更新上次重置点
+		for (auto &curve : m_curves) {
+			m_xDataMap[curve->title().text()].clear();
+			m_yDataMap[curve->title().text()].clear();
+			curve->setSamples(m_xDataMap[curve->title().text()], m_yDataMap[curve->title().text()]);
+		}
+		m_plot->setAxisScale(QwtPlot::xBottom, m_lastResetX, m_lastResetX + 50); // 重置X轴的范围为当前x到x+50
+		m_plot->replot();
+		updateSliderPosition(); // 更新滑块的位置和范围
+		return; // 早期返回，避免在清除后添加数据点
+	}
 
 	// 原有的更新曲线数据的逻辑
 	if (!m_xDataMap.contains(curveName) || !m_yDataMap.contains(curveName)) {
@@ -137,7 +157,7 @@ void lpTendencyDataChart::onChartUpdate(const QString &curveName, double x, doub
 	}
 
 	// 更新数据点后，调整滑动条的最大值
-	int currentMaxX = static_cast<int>(x);
+	int currentMaxX = static_cast<int>(m_maxReceivedX);
 	m_slider->setMaximum(currentMaxX);
 
 	// 保持滑块在最右端
@@ -145,6 +165,7 @@ void lpTendencyDataChart::onChartUpdate(const QString &curveName, double x, doub
 		m_slider->setValue(m_slider->maximum());
 	}
 	m_hasNewData = true; // 设置有新数据的标志
+	m_plot->replot(); // 重绘图表以应用更改
 }
 
 
@@ -340,7 +361,7 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 			m_configLoader->updateSetting(settingName, "yAxisRange", yAxisRange);
 			m_configLoader->updateSetting(settingName, "warningValue", warningValue);
 			m_configLoader->updateSetting(settingName, "alarmValue", alarmValue);
-	
+
 			if (settingName == selectedParentName) {
 				// 更新图表的Y轴范围
 				m_plot->setAxisScale(QwtPlot::yLeft, yAxisRange[0].toDouble(), yAxisRange[1].toDouble());
@@ -407,7 +428,7 @@ void lpTendencyDataChart::AlignPBClicked()
 	dialog.setFont(font);
 
 	QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
-	
+
 	QScrollArea *scrollArea = new QScrollArea(&dialog);
 	scrollArea->setWidgetResizable(true);
 	QWidget *container = new QWidget();
@@ -447,7 +468,7 @@ void lpTendencyDataChart::AlignPBClicked()
 		{
 			leftOptions.append(name);
 		}
-		else if (name.contains("B")&& !name.contains("居中度"))
+		else if (name.contains("B") && !name.contains("居中度"))
 		{
 			rightOptions.append(name);
 		}
@@ -502,7 +523,7 @@ void lpTendencyDataChart::AlignPBClicked()
 	QHBoxLayout *alignmentLayout = new QHBoxLayout;
 	alignmentLayout->addWidget(alignmentLabel);
 	alignmentLayout->addWidget(alignmentDisplay);
-	dialogLayout->addLayout(alignmentLayout); 
+	dialogLayout->addLayout(alignmentLayout);
 
 	// 创建删除，确定和取消按钮
 	QPushButton *deleteButton = new QPushButton("删除", &dialog);
@@ -543,7 +564,7 @@ void lpTendencyDataChart::AlignPBClicked()
 				if (commonPrefix != rightPrefix) {
 					QMessageBox::warning(nullptr, "错误", "左右两边选的通道必须相同！");
 					alignmentDisplay->clear();
-					
+
 					return; // 提前退出函数
 				}
 
@@ -810,6 +831,14 @@ bool lpTendencyDataChart::eventFilter(QObject *watched, QEvent *event) {
 				// 当用户右键点击时，退出历史查看模式
 				m_isViewingHistory = false;
 				resetCurvesOpacity();
+				double xMax = m_maxReceivedX;
+				if (xMax <= 0)
+				{
+					xMax = 50;
+				}
+				double xMin = xMax - 50; // 假设显示范围是50
+				if (xMin < 0) xMin = 0; // 确保xMin不小于0
+				m_plot->setAxisScale(QwtPlot::xBottom, xMin, xMax);
 				m_plot->replot(); // 重绘图表以应用更改
 				return true;
 
@@ -826,14 +855,14 @@ bool lpTendencyDataChart::eventFilter(QObject *watched, QEvent *event) {
 				double newMax = m_xMaxCurrent - shift;
 
 				// 确保新的x轴范围不小于0
-				if (newMin < 0) {
-					newMin = 0;
-					newMax = m_xMaxCurrent - m_xMinCurrent; // 保持区间长度不变
+				if (newMin < m_lastResetX) {
+					newMin = m_lastResetX;
+					newMax = newMin + (m_xMaxCurrent - m_xMinCurrent); // 保持区间长度不变
 				}
 
 				m_plot->setAxisScale(QwtPlot::xBottom, newMin, newMax);
 				m_plot->replot();
-				updateSliderPosition();// 确保滑动条位置更新
+				//updateSliderPosition();// 确保滑动条位置更新
 				return true;
 			}
 			break;
@@ -904,10 +933,16 @@ void lpTendencyDataChart::updateAlarmValue(const QVariantList &alarmValue) {
 
 void lpTendencyDataChart::onSliderValueChanged(int value)
 {
+	m_isViewingHistory = true; // 设置为查看历史数据模式
 	double xMin = value;
 	double xMax = xMin + 50;  // 假设一次显示50m的数据
 
-	m_isViewingHistory = true;  // 标记为正在查看历史数据
+	//// 确保滑块移动不会超出最新的1000米数据范围
+	//if (xMin < lastResetX) {
+	//	xMin = lastResetX;
+	//	xMax = xMin + 50;
+	//	m_slider->setValue(static_cast<int>(xMin)); // 重新设置滑块位置
+	//}
 
 	m_plot->setAxisScale(QwtPlot::xBottom, xMin, xMax);
 	m_plot->replot();
@@ -916,17 +951,26 @@ void lpTendencyDataChart::onSliderValueChanged(int value)
 
 void lpTendencyDataChart::updateSliderPosition() {
 	int xMinCurrent = static_cast<int>(m_plot->axisScaleDiv(QwtPlot::xBottom).lowerBound());
+	int xMaxCurrent = static_cast<int>(m_plot->axisScaleDiv(QwtPlot::xBottom).upperBound());
+
+	// 设置滑块的范围为最新的1000米数据范围
+	m_slider->setMinimum(static_cast<int>(m_lastResetX));
+	m_slider->setMaximum(xMaxCurrent - 50); // 假设显示范围是50，确保滑块不会超出当前显示的最大范围
+
+	// 设置滑块的当前值为x轴的最小值，确保与图表同步
 	m_slider->setValue(xMinCurrent);
 }
 
 void lpTendencyDataChart::clearChart()
 {
+
 	for (auto &curve : m_curves) {
 		m_xDataMap[curve->title().text()].clear();
 		m_yDataMap[curve->title().text()].clear();
 		curve->setSamples(m_xDataMap[curve->title().text()], m_yDataMap[curve->title().text()]);
 	}
-
+	m_lastResetX = 0;
+	m_maxReceivedX = 0;
 	// 重置x轴和y轴的范围
 	m_plot->setAxisScale(QwtPlot::xBottom, 0, 50); // 重置X轴的范围为0-50
 
