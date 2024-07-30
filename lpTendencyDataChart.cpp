@@ -16,6 +16,8 @@ lpTendencyDataChart::lpTendencyDataChart(QObject *parent, QWidget *parentWidget,
 	// 设置X轴和Y轴的标题
 	m_plot->setAxisTitle(QwtPlot::xBottom, "");
 	m_plot->setAxisTitle(QwtPlot::yLeft, "");
+	// 设置自定义的 ScaleDraw
+	m_plot->setAxisScaleDraw(QwtPlot::xBottom, new CustomScaleDraw());
 
 	m_slider = new QSlider(Qt::Horizontal, m_widget);
 
@@ -124,7 +126,7 @@ void lpTendencyDataChart::onChartUpdate(const QString &curveName, double x, doub
 
 
 	// 检查x值是否超过了上次重置点+1000
-	if (x - m_lastResetX > METER_THRESHOLD) {
+	if (x - m_lastResetX >= METER_THRESHOLD) {
 		m_lastResetX = x; // 更新上次重置点
 		for (auto &curve : m_curves) {
 			m_xDataMap[curve->title().text()].clear();

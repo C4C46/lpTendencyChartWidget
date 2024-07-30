@@ -6,7 +6,7 @@
 #include <QMutex>
 #include <QDebug>
 #include <QThread>
-#define METER_THRESHOLD 100000 //设置米数，自动清空（趋势图和数据表格）
+#define METER_THRESHOLD 100000000 //设置米数，自动清空（趋势图和数据表格）
 
 class lpTendencyChartUpdateThread : public QObject
 {

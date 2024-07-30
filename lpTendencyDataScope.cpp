@@ -138,9 +138,9 @@ void lpTendencyDataScope::setColumnVisibility(const QString &curveName, bool vis
 
 
 void lpTendencyDataScope::initializeRows(int startM, int endM) {
-	if (startM == 0) {
-		startM = m_stepM; // 避免m=0的行
-	}
+	//if (startM == 0) {
+	//	startM = m_stepM; // 避免m=0的行
+	//}
 	int numRows = (endM - startM) / m_stepM + 1;
 	int currentRowCount = data_tableWidget->rowCount();
 	data_tableWidget->setRowCount(currentRowCount + numRows);
@@ -167,19 +167,19 @@ void lpTendencyDataScope::addData(const QString &curveName, double x, double y, 
 
 	// 检查是否需要添加新的行
 	if (x >= maxMeter) {
-		int newStartM = maxMeter + m_stepM;
+		int newStartM = maxMeter;
 		int newEndM = newStartM + (m_stepM * (m_numColumns - 1)); // 根据步长和列数计算新的结束米数
 		initializeRows(newStartM, newEndM); // 添加新的行
-		maxMeter = newEndM; // 更新maxMeter为新的结束米数
+		maxMeter = newEndM + m_stepM; // 更新maxMeter为新的结束米数
 	}
 
 
 	int existingRow = m_xDataToRowMap.value(static_cast<int>(x), -1);
 	if (existingRow == -1) return; // 如果没有找到对应的行，直接返回
 
-		// 如果不存在，添加到缓存中
-		m_dataCache[curveName].append(qMakePair(x, qMakePair(y, QVariantList{ warningValue, alarmValue })));
-		emit sgDataCache(m_dataCache);
+	// 如果不存在，添加到缓存中
+	m_dataCache[curveName].append(qMakePair(x, qMakePair(y, QVariantList{ warningValue, alarmValue })));
+	emit sgDataCache(m_dataCache);
 	
 
 }

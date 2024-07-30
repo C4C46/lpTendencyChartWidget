@@ -20,6 +20,7 @@
 #include <qwt_text.h>
 #include <qwt_legend.h>
 #include <qwt_legend_label.h>
+#include <qwt_scale_draw.h>
 #include <QMouseEvent>
 #include <QHash>
 #include <QButtonGroup>
@@ -29,6 +30,17 @@
 #include <QScrollArea>
 #include "lpTendencyChartConfig.h"
 #include "lpTendencyChartUpdateThread.h"
+
+// 自定义的 ScaleDraw 类，用于格式化标签
+class CustomScaleDraw : public QwtScaleDraw {
+public:
+	CustomScaleDraw() {}
+
+	virtual QwtText label(double value) const override {
+		// 使用 'f' 格式化，无小数点，	且不使用科学计数法
+		return QwtText(QString::number(value, 'f', 0));
+	}
+};
 
 class lpTendencyDataChart : public QObject
 {
