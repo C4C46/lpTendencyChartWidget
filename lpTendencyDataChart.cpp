@@ -204,9 +204,9 @@ void lpTendencyDataChart::onIntervalPBClicked() {
 
 	QScrollArea *scrollArea = new QScrollArea(&dialog);
 	scrollArea->setWidgetResizable(true);
-	QWidget *container = new QWidget();/*
+	QWidget *container = new QWidget();
 	container->setStyleSheet("QWidget {background-color: black;}");
-*/
+
 
 
 	QGridLayout *gridLayout = new QGridLayout(container);

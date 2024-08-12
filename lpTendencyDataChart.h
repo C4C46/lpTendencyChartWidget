@@ -59,7 +59,8 @@ public:
 	bool isSameCategory(const QString & option1, const QString & option2);//判断是否是统一类别，进行对齐度比对
 	void resetCurvesOpacity(); // 添加成员变量存储曲线名称
 	void installEventFilters();//恢复所有曲线显示
-
+    QwtPlot* getPlot() const { return m_plot; }  // 添加获取图表的方法
+    QSlider* getSlider() { return m_slider; }
 public slots:
 	void onChartUpdate(const QString &curveName, double x, double y);
 	void onIntervalPBClicked();//参数设置

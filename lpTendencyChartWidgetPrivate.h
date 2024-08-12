@@ -7,6 +7,8 @@
 #include "lpTendencyDataChart.h"
 #include "lpTendencyManageThread.h"
 #include <QThread>
+#include <QInputDialog>
+#include <QScrollArea>
 
 class lpTendencyChartWidgetPrivate : public QObject
 {
@@ -32,18 +34,24 @@ signals:
 
 public slots:
 	void updateDataScope(const QString &curveName, double x, double y);//接收数据更新数据表格
-	void updateDataChart(const QString &curveName, double x, double y);//接收数据更新趋势图
+	void updateDataChart(const QString &curveName, double x, double y);
+    void onChangeChartNumClicked();
+    void setChartCount(int count);
+    void setupCharts();
+    QStringList filterCurveNamesByChartIndex(int index);
+    //接收数据更新趋势图
 private:
 	Ui::lpTendencyChartWidget ui;
 	lpTendencyChartConfig *m_ChartConfig{nullptr};
 	lpTendencyDataScope *m_dataScope{nullptr};
-	lpTendencyDataChart *m_dataChart{nullptr};
+	//lpTendencyDataChart *m_dataChart{nullptr};
 	lpTendencyManageThread *m_manageThread{ nullptr };
 	QThread *m_thread{ nullptr };
 
-
-
-
-
+    QList<lpTendencyDataChart *> m_dataCharts; // 存储所有图表的列表
+    int m_numCharts; // 存储图表数量
+    QGridLayout *m_gridLayout; // 存储网格布局指针，方便重建布局
+    QScrollArea *m_scrollArea;
+    QWidget *m_scrollAreaWidgetContents;
 };
 

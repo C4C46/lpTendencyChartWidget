@@ -1,7 +1,7 @@
 ﻿#include "lpTendencyChartWidgetPrivate.h"
-
+#pragma execution_character_set("utf-8")
 lpTendencyChartWidgetPrivate::lpTendencyChartWidgetPrivate(lpTendencyChartWidget *parent)
-	: QObject(parent)
+	: QObject(parent), m_numCharts(4) // 默认为4个图表
 {
 
 
@@ -24,10 +24,10 @@ lpTendencyChartWidgetPrivate::~lpTendencyChartWidgetPrivate()
 		delete m_dataScope;
 
 	}
-	if (m_dataChart)
-	{
-		delete m_dataChart;
-	}
+	//if (m_dataChart)
+	//{
+	//	delete m_dataChart;
+	//}
 	if (m_ChartConfig)
 	{
 		m_ChartConfig->saveConfig("Config/Event.json");
@@ -53,7 +53,30 @@ void lpTendencyChartWidgetPrivate::init()
 	QStringList allCurveNames = m_ChartConfig->getAllCurveNames(); // 获取所有曲线名称
 	//QStringList ChooseNames = m_ChartConfig->getCurveNames();
 
-	m_dataChart = new lpTendencyDataChart(this, ui.Chartwidget, curveNames, m_ChartConfig);
+    m_gridLayout = new QGridLayout();
+
+    m_scrollArea = new QScrollArea(ui.Chartwidget);
+    m_scrollAreaWidgetContents = new QWidget();
+    m_scrollAreaWidgetContents->setLayout(m_gridLayout);
+
+    m_scrollArea->setWidgetResizable(true);
+    m_scrollArea->setWidget(m_scrollAreaWidgetContents);
+
+    QVBoxLayout *chartWidgetLayout = new QVBoxLayout(ui.Chartwidget);
+    chartWidgetLayout->addWidget(m_scrollArea);
+    ui.Chartwidget->setLayout(chartWidgetLayout);
+
+    setupCharts();
+
+    //int numCharts = 4; // 可以根据需要调整图表数量
+    //for (int i = 0; i < numCharts; ++i) {
+    //    // 为每个图表创建一个新的 lpTendencyDataChart 实例
+    //    m_dataChart = new lpTendencyDataChart(this, ui.Chartwidget, curveNames, m_ChartConfig);
+    //    // 将图表添加到网格布局中，这里简单地分布在网格的行中
+    //    gridLayout->addWidget(m_dataChart->getPlot(), i / 2, i % 2); // 2列布局
+    //}
+
+	//m_dataChart = new lpTendencyDataChart(this, ui.Chartwidget, curveNames, m_ChartConfig);
 	if (!m_dataScope)
 	{
 		m_dataScope = new lpTendencyDataScope(ui.tableWidget, this);
@@ -71,13 +94,13 @@ void lpTendencyChartWidgetPrivate::init()
 	}
 
 
-	connect(m_ChartConfig, &lpTendencyChartConfig::curveDisplayChanged, m_dataChart, &lpTendencyDataChart::onCurveDisplayChanged);
+	//connect(m_ChartConfig, &lpTendencyChartConfig::curveDisplayChanged, m_dataChart, &lpTendencyDataChart::onCurveDisplayChanged);
 	connect(ui.Interval_PB, &QPushButton::clicked, this, &lpTendencyChartWidgetPrivate::handleIntervalPBClicked);
 	connect(ui.Toggle_PB, &QPushButton::clicked, this, &lpTendencyChartWidgetPrivate::toggleTableVisibility);
 	connect(ui.Align_PB, &QPushButton::clicked, this, &lpTendencyChartWidgetPrivate::AlignPBClicked);
 	connect(m_ChartConfig, &lpTendencyChartConfig::curveDisplayChanged, m_dataScope, &lpTendencyDataScope::setColumnVisibility);
 	connect(this, &lpTendencyChartWidgetPrivate::sgClearScope, m_dataScope, &lpTendencyDataScope::clearTable);
-	connect(this, &lpTendencyChartWidgetPrivate::sgClearChart, m_dataChart, &lpTendencyDataChart::clearChart);
+	//connect(this, &lpTendencyChartWidgetPrivate::sgClearChart, m_dataChart, &lpTendencyDataChart::clearChart);
 	
 	//connect(m_ChartConfig, &lpTendencyChartConfig::curveNamesChanged, m_dataScope, &lpTendencyDataScope::setColumnNames);
 
@@ -91,7 +114,7 @@ void lpTendencyChartWidgetPrivate::init()
 	connect(m_manageThread, &lpTendencyManageThread::sgupdateScope, this, &lpTendencyChartWidgetPrivate::updateDataScope);
 	connect(m_manageThread, &lpTendencyManageThread::sgupdateChart, this, &lpTendencyChartWidgetPrivate::updateDataChart);
 	m_thread->start();
-
+    connect(ui.ChartNum_PB, &QPushButton::clicked, this, &lpTendencyChartWidgetPrivate::onChangeChartNumClicked);
 
 
 //通用
@@ -106,9 +129,12 @@ void lpTendencyChartWidgetPrivate::init()
 
 
 void lpTendencyChartWidgetPrivate::handleIntervalPBClicked() {
-	if (m_dataChart) {
-		m_dataChart->onIntervalPBClicked();//用于参数设置对话框
-	}
+
+    if (!m_dataCharts.isEmpty())
+    {
+        m_dataCharts.first()->onIntervalPBClicked();
+    }
+
 }
 
 
@@ -120,10 +146,10 @@ void lpTendencyChartWidgetPrivate::toggleTableVisibility()
 
 void lpTendencyChartWidgetPrivate::AlignPBClicked()
 {
-	if (m_dataChart)
-	{
-		m_dataChart->AlignPBClicked();//用于显示对齐度设置对话框
-	}
+    if (!m_dataCharts.isEmpty())
+    {
+        m_dataCharts.first()->AlignPBClicked();
+    }
 }
 
 QWidget * lpTendencyChartWidgetPrivate::getTopWidget()
@@ -163,10 +189,72 @@ void lpTendencyChartWidgetPrivate::updateDataScope(const QString &curveName, dou
 void lpTendencyChartWidgetPrivate::updateDataChart(const QString &curveName, double x, double y) {
 
 	qDebug() << "updateDataChartThreadID: " << QThread::currentThreadId();
-	m_dataChart->onChartUpdate(curveName, x, y);
+    for (lpTendencyDataChart *chart : m_dataCharts) {
+        chart->onChartUpdate(curveName, x, y); // 更新每个图表
+    }
 
 }
 
 
+void lpTendencyChartWidgetPrivate::onChangeChartNumClicked()
+{
+    bool ok;
+    int num = QInputDialog::getInt(nullptr, "趋势图数量", "请输入趋势图个数:", m_numCharts, 1, 8, 1, &ok);
+    if (ok) {
+        setChartCount(num);
+    }
+}
 
 
+
+void lpTendencyChartWidgetPrivate::setChartCount(int count)
+{
+    if (count != m_numCharts) {
+        m_numCharts = count;
+
+        // 清除旧的图表和布局
+        // 先移除所有控件，防止它们被自动删除
+        QLayoutItem* item;
+        while ((item = m_gridLayout->takeAt(0)) != nullptr) {
+            if (item->widget()) {
+                item->widget()->setParent(nullptr);
+            }
+            delete item;
+        }
+
+        delete m_gridLayout; // 现在安全删除布局
+
+        // 创建新的布局和图表
+        m_gridLayout = new QGridLayout(m_scrollAreaWidgetContents);
+        setupCharts();
+    }
+}
+
+void lpTendencyChartWidgetPrivate::setupCharts()
+{
+    QStringList curveNames = m_ChartConfig->getCurveNames();
+    int rows = std::sqrt(m_numCharts);
+    int cols = (m_numCharts + rows - 1) / rows;
+ // 清除旧的图表列表
+    m_dataCharts.clear();
+
+    for (int i = 0; i < m_numCharts; ++i) {
+        QWidget *chartContainer = new QWidget(m_scrollAreaWidgetContents);
+        QVBoxLayout *chartLayout = new QVBoxLayout(chartContainer);
+
+        lpTendencyDataChart *chart = new lpTendencyDataChart(this, chartContainer, curveNames, m_ChartConfig);
+        m_dataCharts.append(chart);
+
+        // 将图表的绘图部分添加到布局中
+        chartLayout->addWidget(chart->getPlot());
+        chartLayout->addWidget(chart->getSlider());  // 确保滑动条在图表下方
+
+        // 设置容器的布局
+        chartContainer->setLayout(chartLayout);
+
+        // 将容器添加到网格布局中
+        m_gridLayout->addWidget(chartContainer, i / cols, i % cols);
+
+        connect(m_ChartConfig, &lpTendencyChartConfig::curveDisplayChanged, chart, &lpTendencyDataChart::onCurveDisplayChanged);
+    }
+}

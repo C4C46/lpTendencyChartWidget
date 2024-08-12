@@ -60,6 +60,13 @@
             </spacer>
            </item>
            <item>
+            <widget class="QPushButton" name="ChartNum_PB">
+             <property name="text">
+              <string>趋势图个数</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="Align_PB">
              <property name="text">
               <string>对齐度设置</string>
